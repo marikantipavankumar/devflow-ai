@@ -1,8 +1,10 @@
 package com.devflow.backend.controller;
 
 
+import com.devflow.backend.dto.CreateUserRequest;
 import com.devflow.backend.entity.User;
 import com.devflow.backend.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,8 +23,8 @@ public class UserController {
         return userService.getAllUsers();
     }
 
-    @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    @PostMapping("/register")
+    public User registerUser(@Valid @RequestBody CreateUserRequest request) {
+        return userService.registerUser(request);
     }
 }

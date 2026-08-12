@@ -6,6 +6,7 @@ import com.devflow.backend.dto.UserResponse;
 import com.devflow.backend.entity.User;
 import com.devflow.backend.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,13 +22,33 @@ public class UserController {
 
     @GetMapping
     public List<UserResponse> getAllUsers(){
-        System.out.println("🔥 USER CONTROLLER HIT");
 
         List<UserResponse> users = userService.getAllUsers();
 
-        System.out.println("🔥 USERS FETCHED: " + users.size());
-
         return userService.getAllUsers();
+    }
+
+    @GetMapping("/me")
+    public UserResponse getCurrentUser(Authentication authentication) {
+
+        String email = authentication.getName();
+
+        User user=userService.getUserByEmail(email);
+
+        return new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getProfileImage(),
+                user.getBio(),
+                user.getIsVerified(),
+                user.getIsActive(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
     }
 
     @PostMapping("/register")

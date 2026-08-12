@@ -68,4 +68,10 @@ public class UserServiceImpl implements UserService {
          return userMapper.toResponse(usermapper);
     }
 
+    @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).
+                orElseThrow(()->new RuntimeException("User not Found"));
+    }
+
 }

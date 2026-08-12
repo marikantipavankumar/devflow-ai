@@ -1,5 +1,6 @@
 package com.devflow.backend.security;
 
+import com.devflow.backend.dto.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,11 +9,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
 public class    JwtAuthenticationFilter extends OncePerRequestFilter {
-
+    ObjectMapper objectMapper=new ObjectMapper();
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
 
@@ -40,31 +42,44 @@ public class    JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String jwt = authHeader.substring(7);
 
-        System.out.println("JWT: " + jwt);
+        try {
 
-        String username = jwtService.extractUsername(jwt);
+            String username = jwtService.extractUsername(jwt);
 
-        System.out.println(" Username from JWT: " + username);
+            UserDetails userDetails =
+                    userDetailsService.loadUserByUsername(username);
 
-        UserDetails userDetails =
-                userDetailsService.loadUserByUsername(username);
+            if (jwtService.isTokenValid(jwt, userDetails)) {
 
-        System.out.println("User loaded: " + userDetails.getUsername());
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
 
-        if (jwtService.isTokenValid(jwt, userDetails)) {
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
+            }
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
+        } catch (Exception e) {
+
+            SecurityContextHolder.clearContext();
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+
+            ErrorResponse errorResponse =
+                    new ErrorResponse(
+                            401,
+                            "Invalid or expired token"
                     );
+            response.getWriter().write(
+                    objectMapper.writeValueAsString(errorResponse)
+            );
 
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
-            System.out.println("✅ Authentication set in SecurityContext");
+            return;
         }
-
         filterChain.doFilter(request, response);
     }
 }

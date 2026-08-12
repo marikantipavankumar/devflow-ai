@@ -1,15 +1,16 @@
 package com.devflow.backend.controller;
 
 import com.devflow.backend.dto.LoginRequest;
+import com.devflow.backend.dto.LoginResponse;
+import com.devflow.backend.dto.LoginUserResponse;
+import com.devflow.backend.security.CustomUserDetails;
 import com.devflow.backend.security.JwtService;
+import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,7 +25,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest request) {
+    public LoginResponse login( @Valid @RequestBody LoginRequest request) {
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -33,13 +34,28 @@ public class AuthController {
                 )
         );
 
-        org.springframework.security.core.userdetails.UserDetails userDetails =
-                (org.springframework.security.core.userdetails.UserDetails)
-                        authentication.getPrincipal();
+        CustomUserDetails customUserDetails =
+                (CustomUserDetails) authentication.getPrincipal();
 
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(customUserDetails);
 
-        return token;
+        return new LoginResponse(
+                token,
+                customUserDetails.getUsername(),
+                customUserDetails.getActualUsername()
+        );
+    }
+
+    @GetMapping("/me")
+    public LoginUserResponse getCurrentUser(Authentication authentication) {
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        return new LoginUserResponse(
+                userDetails.getUsername(),
+                userDetails.getActualUsername()
+        );
     }
 }
 

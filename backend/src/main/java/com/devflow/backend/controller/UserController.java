@@ -2,6 +2,7 @@ package com.devflow.backend.controller;
 
 
 import com.devflow.backend.dto.CreateUserRequest;
+import com.devflow.backend.dto.UpdateUserRequest;
 import com.devflow.backend.dto.UserResponse;
 import com.devflow.backend.entity.User;
 import com.devflow.backend.service.UserService;
@@ -23,9 +24,13 @@ public class UserController {
     @GetMapping
     public List<UserResponse> getAllUsers(){
 
-        List<UserResponse> users = userService.getAllUsers();
-
         return userService.getAllUsers();
+    }
+
+    @PutMapping("/me")
+    public UserResponse updateUser(@Valid @RequestBody UpdateUserRequest request,Authentication authentication){
+        String email=authentication.getName();
+        return userService.updateUser(email,request);
     }
 
     @GetMapping("/me")
@@ -33,22 +38,7 @@ public class UserController {
 
         String email = authentication.getName();
 
-        User user=userService.getUserByEmail(email);
-
-        return new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getProfileImage(),
-                user.getBio(),
-                user.getIsVerified(),
-                user.getIsActive(),
-                user.getCreatedAt(),
-                user.getUpdatedAt()
-        );
+        return userService.getUserByEmail(email);
     }
 
     @PostMapping("/register")

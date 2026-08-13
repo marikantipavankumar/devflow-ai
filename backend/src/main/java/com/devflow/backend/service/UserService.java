@@ -1,6 +1,7 @@
 package com.devflow.backend.service;
 
 import com.devflow.backend.dto.CreateUserRequest;
+import com.devflow.backend.dto.UpdateUserRequest;
 import com.devflow.backend.dto.UserResponse;
 import com.devflow.backend.entity.User;
 
@@ -10,7 +11,9 @@ public interface UserService {
      List<UserResponse> getAllUsers();
     User getUserById(Long id);
 
+    UserResponse updateUser(String email, UpdateUserRequest request);
+
     UserResponse registerUser(CreateUserRequest request);
 
-    User getUserByEmail(String email);
+    UserResponse getUserByEmail(String email);
 }

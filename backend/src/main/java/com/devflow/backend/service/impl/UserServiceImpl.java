@@ -3,6 +3,7 @@ package com.devflow.backend.service.impl;
 import com.devflow.backend.dto.CreateUserRequest;
 import com.devflow.backend.dto.UpdateUserRequest;
 import com.devflow.backend.dto.UserResponse;
+import com.devflow.backend.entity.Role;
 import com.devflow.backend.entity.User;
 import com.devflow.backend.exception.ResourceAlreadyExistsException;
 import com.devflow.backend.exception.ResourceNotFoundException;
@@ -104,12 +105,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse registerUser(CreateUserRequest request) {
-        if(userRepository.existsByEmail(request.getEmail())){
-            throw new RuntimeException("Email Already Exists!...");
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ResourceAlreadyExistsException(
+                    "Email already exists"
+            );
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists.");
+            throw new ResourceAlreadyExistsException(
+                    "Username already exists"
+            );
         }
 
 
@@ -120,6 +125,7 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
+                .role(Role.USER)
                 .build();
 
         user.setIsVerified(false);

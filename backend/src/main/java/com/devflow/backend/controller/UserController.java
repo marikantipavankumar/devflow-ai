@@ -1,12 +1,14 @@
 package com.devflow.backend.controller;
 
 
+import com.devflow.backend.dto.ChangePasswordRequest;
 import com.devflow.backend.dto.CreateUserRequest;
 import com.devflow.backend.dto.UpdateUserRequest;
 import com.devflow.backend.dto.UserResponse;
 import com.devflow.backend.entity.User;
 import com.devflow.backend.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,4 +47,17 @@ public class UserController {
     public UserResponse registerUser(@Valid @RequestBody CreateUserRequest request) {
         return userService.registerUser(request);
     }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        userService.changePassword(email, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
 }

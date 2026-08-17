@@ -22,7 +22,8 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,JwtService jwtService,CustomUserDetailsService userDetailsService, SecurityAuthenticationEntryPoint authenticationEntryPoint,
-                                            SecurityAccessDeniedHandler accessDeniedHandler) throws Exception {
+                                            SecurityAccessDeniedHandler accessDeniedHandler,
+                                            TokenBlacklistService tokenBlacklistService) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -33,23 +34,31 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/users/register"
                         )
                         .permitAll()
-                        .requestMatchers(
-                                "/api/users"
-                        ).hasRole("ADMIN")
+
+                        .requestMatchers("/api/auth/logout")
+                        .authenticated()
+
+                        .requestMatchers("/api/users")
+                        .hasRole("ADMIN")
+
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
-                        .anyRequest().authenticated()
+
+                        .anyRequest()
+                        .authenticated()
                 )
 
                 .addFilterBefore(
                         new JwtAuthenticationFilter(
                                 jwtService,
-                                userDetailsService
+                                userDetailsService,
+                                tokenBlacklistService
                         ),
                         UsernamePasswordAuthenticationFilter.class
                 );

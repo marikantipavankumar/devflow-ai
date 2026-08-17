@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
                                 error.getField(),
                                 error.getDefaultMessage()
                         )
-                );
+                );   
 
         ValidationErrorResponse response =
                 new ValidationErrorResponse(
@@ -76,6 +76,32 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+    @ExceptionHandler(InvalidCurrentPasswordException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCurrentPassword(
+            InvalidCurrentPasswordException ex) {
+
+        Map<String, String> error = new HashMap<>();
+
+        error.put("message", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(InvalidNewPasswordException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidNewPassword(
+            InvalidNewPasswordException ex) {
+
+        Map<String, String> error = new HashMap<>();
+
+        error.put("message", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(error);
     }
 }

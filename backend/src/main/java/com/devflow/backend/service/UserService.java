@@ -1,5 +1,6 @@
 package com.devflow.backend.service;
 
+import com.devflow.backend.dto.ChangePasswordRequest;
 import com.devflow.backend.dto.CreateUserRequest;
 import com.devflow.backend.dto.UpdateUserRequest;
 import com.devflow.backend.dto.UserResponse;
@@ -16,4 +17,9 @@ public interface UserService {
     UserResponse registerUser(CreateUserRequest request);
 
     UserResponse getUserByEmail(String email);
+
+    void changePassword(
+            String email,
+            ChangePasswordRequest request
+    );
 }

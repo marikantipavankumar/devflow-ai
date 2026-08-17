@@ -17,13 +17,16 @@ public class    JwtAuthenticationFilter extends OncePerRequestFilter {
     ObjectMapper objectMapper=new ObjectMapper();
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            CustomUserDetailsService userDetailsService) {
+            CustomUserDetailsService userDetailsService,
+            TokenBlacklistService tokenBlacklistService) {
 
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -41,6 +44,25 @@ public class    JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String jwt = authHeader.substring(7);
+        String tokenId = jwtService.extractTokenId(jwt);
+
+        if (tokenBlacklistService.isBlacklisted(tokenId)) {
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+
+            ErrorResponse errorResponse =
+                    new ErrorResponse(
+                            401,
+                            "Token has been revoked"
+                    );
+
+            response.getWriter().write(
+                    objectMapper.writeValueAsString(errorResponse)
+            );
+
+            return;
+        }
 
         try {
 

@@ -1,15 +1,19 @@
 package com.devflow.backend.service.impl;
 
+import com.devflow.backend.dto.ChangePasswordRequest;
 import com.devflow.backend.dto.CreateUserRequest;
 import com.devflow.backend.dto.UpdateUserRequest;
 import com.devflow.backend.dto.UserResponse;
 import com.devflow.backend.entity.Role;
 import com.devflow.backend.entity.User;
+import com.devflow.backend.exception.InvalidCurrentPasswordException;
+import com.devflow.backend.exception.InvalidNewPasswordException;
 import com.devflow.backend.exception.ResourceAlreadyExistsException;
 import com.devflow.backend.exception.ResourceNotFoundException;
 import com.devflow.backend.mapper.UserMapper;
 import com.devflow.backend.repository.UserRepository;
 import com.devflow.backend.service.UserService;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +41,6 @@ public class UserServiceImpl implements UserService {
                 .toList();
     }
 
-
     @Override
     public User getUserById(Long id) {
         return userRepository.findById(id)
@@ -53,7 +56,6 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("User not found")
                 );
-
 
         if (request.getUsername() != null &&
                 !request.getUsername().equals(user.getUsername()) &&
@@ -146,5 +148,47 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.toResponse(user);
     }
+
+    @Override
+    public void changePassword(
+            String email,
+            ChangePasswordRequest request) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"
+                        )
+                );
+
+        if (!passwordEncoder.matches(
+                request.getCurrentPassword(),
+                user.getPassword())) {
+
+            throw new InvalidCurrentPasswordException(
+                    "Current password is incorrect"
+            );
+        }
+
+        if (passwordEncoder.matches(
+                request.getNewPassword(),
+                user.getPassword())) {
+
+            throw new InvalidNewPasswordException(
+                    "New password must be different from current password"
+            );
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                )
+        );
+
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userRepository.save(user);
+    }
+
 
 }

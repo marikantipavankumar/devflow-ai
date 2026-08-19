@@ -6,10 +6,7 @@ import com.devflow.backend.dto.UpdateUserRequest;
 import com.devflow.backend.dto.UserResponse;
 import com.devflow.backend.entity.Role;
 import com.devflow.backend.entity.User;
-import com.devflow.backend.exception.InvalidCurrentPasswordException;
-import com.devflow.backend.exception.InvalidNewPasswordException;
-import com.devflow.backend.exception.ResourceAlreadyExistsException;
-import com.devflow.backend.exception.ResourceNotFoundException;
+import com.devflow.backend.exception.*;
 import com.devflow.backend.mapper.UserMapper;
 import com.devflow.backend.repository.UserRepository;
 import com.devflow.backend.service.UserService;
@@ -190,5 +187,76 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Override
+    public UserResponse updateUserRole(Long id, Role role,
+                                       String adminEmail) {
 
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with ID: " + id
+                        )
+                );
+        User currentAdmin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Admin user not found"
+                        )
+                );
+
+        if (currentAdmin.getId().equals(user.getId())) {
+
+            throw new BusinessRuleException(
+                    "Admin cannot change their own role"
+            );
+        }
+
+        if (user.getRole() == Role.ADMIN && role == Role.USER) {
+
+            long adminCount = userRepository.countByRole(Role.ADMIN);
+
+            if (adminCount == 1) {
+                throw new BusinessRuleException(
+                        "Cannot remove the role from the last administrator"
+                );
+            }
+        }
+
+        user.setRole(role);
+
+        User updatedUser = userRepository.save(user);
+
+        return userMapper.toResponse(updatedUser);
+    }
+
+    @Override
+    public UserResponse updateUserStatus(Long id, Boolean active,
+                                         String adminEmail) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with ID: " + id
+                        )
+                );
+        User currentAdmin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Admin user not found"
+                        )
+                );
+
+        if (currentAdmin.getId().equals(user.getId()) && !active) {
+
+            throw new BusinessRuleException(
+                    "Admin cannot deactivate their own account"
+            );
+        }
+
+        user.setIsActive(active);
+
+        User updatedUser = userRepository.save(user);
+
+        return userMapper.toResponse(updatedUser);
+    }
 }

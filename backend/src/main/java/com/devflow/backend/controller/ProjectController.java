@@ -3,6 +3,7 @@ package com.devflow.backend.controller;
 import com.devflow.backend.dto.CreateProjectRequest;
 import com.devflow.backend.dto.ProjectResponse;
 import com.devflow.backend.dto.UpdateProjectRequest;
+import com.devflow.backend.dto.UpdateProjectStatusRequest;
 import com.devflow.backend.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -85,4 +86,20 @@ public class ProjectController {
                 email
         );
     }
+
+    @PatchMapping("/{id}/status")
+    public ProjectResponse updateProjectStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateProjectStatusRequest request,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        return projectService.updateProjectStatus(
+                id,
+                email,
+                request
+        );
+    }
+
 }

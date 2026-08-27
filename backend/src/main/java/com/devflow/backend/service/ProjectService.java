@@ -3,6 +3,7 @@ package com.devflow.backend.service;
 import com.devflow.backend.dto.CreateProjectRequest;
 import com.devflow.backend.dto.ProjectResponse;
 import com.devflow.backend.dto.UpdateProjectRequest;
+import com.devflow.backend.dto.UpdateProjectStatusRequest;
 
 import java.util.List;
 
@@ -29,4 +30,9 @@ public interface ProjectService {
             Long id,
             String email
     );
+
+    ProjectResponse updateProjectStatus(
+            Long id,
+            String email,
+            UpdateProjectStatusRequest request);
 }

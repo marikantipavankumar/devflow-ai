@@ -3,6 +3,7 @@ package com.devflow.backend.service.impl;
 import com.devflow.backend.dto.CreateProjectRequest;
 import com.devflow.backend.dto.ProjectResponse;
 import com.devflow.backend.dto.UpdateProjectRequest;
+import com.devflow.backend.dto.UpdateProjectStatusRequest;
 import com.devflow.backend.entity.Project;
 import com.devflow.backend.entity.ProjectStatus;
 import com.devflow.backend.entity.User;
@@ -146,5 +147,69 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.delete(project);
     }
+
+    @Override
+    public ProjectResponse updateProjectStatus(
+            Long id,
+            String email,
+            UpdateProjectStatusRequest request) {
+
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + id
+                        )
+                );
+
+        if (!project.getOwner().getEmail().equals(email)) {
+            throw new AccessDeniedException(
+                    "You do not have access to this project"
+            );
+        }
+
+        ProjectStatus currentStatus = project.getStatus();
+        ProjectStatus newStatus = request.getStatus();
+
+        if (!isValidStatusTransition(currentStatus, newStatus)) {
+            throw new BusinessRuleException(
+                    "Invalid project status transition from "
+                            + currentStatus
+                            + " to "
+                            + newStatus
+            );
+        }
+
+        project.setStatus(newStatus);
+
+        Project updatedProject =
+                projectRepository.save(project);
+
+        return projectMapper.toResponse(updatedProject);
+    }
+
+    private boolean isValidStatusTransition(
+            ProjectStatus currentStatus,
+            ProjectStatus newStatus) {
+
+        if (currentStatus == newStatus) {
+            return true;
+        }
+
+        return switch (currentStatus) {
+
+            case PLANNING ->
+                    newStatus == ProjectStatus.ACTIVE;
+
+            case ACTIVE ->
+                    newStatus == ProjectStatus.COMPLETED;
+
+            case COMPLETED ->
+                    newStatus == ProjectStatus.ARCHIVED;
+
+            case ARCHIVED ->
+                    false;
+        };
+    }
+
 
     }

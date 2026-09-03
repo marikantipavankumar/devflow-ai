@@ -1,9 +1,6 @@
 package com.devflow.backend.controller;
 
-import com.devflow.backend.dto.CreateProjectRequest;
-import com.devflow.backend.dto.ProjectResponse;
-import com.devflow.backend.dto.UpdateProjectRequest;
-import com.devflow.backend.dto.UpdateProjectStatusRequest;
+import com.devflow.backend.dto.*;
 import com.devflow.backend.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -98,6 +95,67 @@ public class ProjectController {
         return projectService.updateProjectStatus(
                 id,
                 email,
+                request
+        );
+    }
+
+    @PostMapping("/{projectId}/members")
+    public ProjectMemberResponse addMember(
+            @PathVariable Long projectId,
+            @Valid @RequestBody AddProjectMemberRequest request,
+            Authentication authentication) {
+
+        String ownerEmail = authentication.getName();
+
+        return projectService.addMember(
+                projectId,
+                ownerEmail,
+                request
+        );
+    }
+
+    @GetMapping("/{projectId}/members")
+    public List<ProjectMemberResponse> getMembers(
+            @PathVariable Long projectId,
+            Authentication authentication) {
+
+        String userEmail = authentication.getName();
+
+        return projectService.getMembers(
+                projectId,
+                userEmail
+        );
+    }
+
+    @DeleteMapping("/{projectId}/members/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeMember(
+            @PathVariable Long projectId,
+            @PathVariable Long userId,
+            Authentication authentication) {
+
+        String ownerEmail = authentication.getName();
+
+        projectService.removeMember(
+                projectId,
+                userId,
+                ownerEmail
+        );
+    }
+
+    @PatchMapping("/{projectId}/members/{userId}/role")
+    public ProjectMemberResponse updateMemberRole(
+            @PathVariable Long projectId,
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateProjectMemberRoleRequest request,
+            Authentication authentication) {
+
+        String ownerEmail = authentication.getName();
+
+        return projectService.updateMemberRole(
+                projectId,
+                userId,
+                ownerEmail,
                 request
         );
     }

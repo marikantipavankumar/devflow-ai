@@ -1,9 +1,6 @@
 package com.devflow.backend.service;
 
-import com.devflow.backend.dto.CreateProjectRequest;
-import com.devflow.backend.dto.ProjectResponse;
-import com.devflow.backend.dto.UpdateProjectRequest;
-import com.devflow.backend.dto.UpdateProjectStatusRequest;
+import com.devflow.backend.dto.*;
 
 import java.util.List;
 
@@ -35,4 +32,28 @@ public interface ProjectService {
             Long id,
             String email,
             UpdateProjectStatusRequest request);
+
+    ProjectMemberResponse addMember(
+            Long projectId,
+            String ownerEmail,
+            AddProjectMemberRequest request
+    );
+
+    List<ProjectMemberResponse> getMembers(
+            Long projectId,
+            String userEmail
+    );
+
+    void removeMember(
+            Long projectId,
+            Long userId,
+            String ownerEmail
+    );
+
+    ProjectMemberResponse updateMemberRole(
+            Long projectId,
+            Long userId,
+            String ownerEmail,
+            UpdateProjectMemberRoleRequest request
+    );
 }

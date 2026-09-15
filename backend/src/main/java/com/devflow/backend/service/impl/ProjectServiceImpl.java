@@ -1,20 +1,20 @@
 package com.devflow.backend.service.impl;
 
 import com.devflow.backend.dto.*;
-import com.devflow.backend.entity.Project;
-import com.devflow.backend.entity.ProjectStatus;
-import com.devflow.backend.entity.User;
+import com.devflow.backend.entity.*;
 import com.devflow.backend.exception.AccessDeniedException;
 import com.devflow.backend.exception.BusinessRuleException;
 import com.devflow.backend.exception.ResourceAlreadyExistsException;
 import com.devflow.backend.exception.ResourceNotFoundException;
 import com.devflow.backend.mapper.ProjectMapper;
+import com.devflow.backend.mapper.TaskMapper;
 import com.devflow.backend.repository.ProjectMemberRepository;
 import com.devflow.backend.repository.ProjectRepository;
+import com.devflow.backend.repository.TaskRepository;
 import com.devflow.backend.repository.UserRepository;
 import com.devflow.backend.service.ProjectService;
 import org.springframework.stereotype.Service;
-import com.devflow.backend.entity.ProjectMember;
+
 import java.util.List;
 
 @Service
@@ -24,16 +24,19 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserRepository userRepository;
     private final ProjectMapper projectMapper;
     private final ProjectMemberRepository projectMemberRepository;
+    private final TaskRepository taskRepository;
 
     public ProjectServiceImpl(
             ProjectRepository projectRepository,
             UserRepository userRepository,
-            ProjectMapper projectMapper, ProjectMemberRepository projectMemberRepository) {
+            ProjectMapper projectMapper, ProjectMemberRepository projectMemberRepository
+            ,TaskRepository taskRepository) {
 
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.projectMapper = projectMapper;
         this.projectMemberRepository = projectMemberRepository;
+        this.taskRepository=taskRepository;
     }
     @Override
     public ProjectResponse createProject(
@@ -406,6 +409,228 @@ public class ProjectServiceImpl implements ProjectService {
                 updatedMember.getRole(),
                 updatedMember.getJoinedAt()
         );
+    }
+
+    @Override
+    public TaskResponse createTask(
+            Long projectId,
+            String ownerEmail,
+            CreateTaskRequest request) {
+
+        // 1. Find the project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(ownerEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can create tasks"
+            );
+        }
+
+        // 3. Create the Task entity
+        Task task = Task.builder()
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .priority(request.getPriority())
+                .project(project)
+                .build();
+
+        Task savedTask = taskRepository.save(task);
+
+        return TaskMapper.toResponse(savedTask);
+    }
+
+    @Override
+    public List<TaskResponse> getProjectTasks(
+            Long projectId,
+            String userEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can view project tasks"
+            );
+        }
+
+        // 3. Find all tasks belonging to the project
+        List<Task> tasks = taskRepository.findByProject(project);
+
+        // 4. Convert entities to response DTOs
+        return tasks.stream()
+                .map(TaskMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public TaskResponse getTaskById(
+            Long projectId,
+            Long taskId,
+            String userEmail) {
+
+        // 1. Find the project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can view this task"
+            );
+        }
+
+        // 3. Find the task belonging to this project
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        // 4. Convert Task → TaskResponse
+        return TaskMapper.toResponse(task);
+    }
+
+    @Override
+    public TaskResponse updateTask(
+            Long projectId,
+            Long taskId,
+            String userEmail,
+            UpdateTaskRequest request) {
+
+        // 1. Find the project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can update tasks"
+            );
+        }
+
+        // 3. Find the task belonging to this project
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        // 4. Update task fields
+        task.setTitle(request.getTitle());
+        task.setDescription(request.getDescription());
+        task.setPriority(request.getPriority());
+
+        // 5. Save updated task
+        Task updatedTask = taskRepository.save(task);
+
+        // 6. Convert Task → TaskResponse
+        return TaskMapper.toResponse(updatedTask);
+    }
+
+    @Override
+    public void deleteTask(
+            Long projectId,
+            Long taskId,
+            String userEmail) {
+
+        // 1. Find the project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can delete tasks"
+            );
+        }
+
+        // 3. Find the task belonging to this project
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        // 4. Delete the task
+        taskRepository.delete(task);
+    }
+
+    @Override
+    public TaskResponse updateTaskStatus(
+            Long projectId,
+            Long taskId,
+            String userEmail,
+            UpdateTaskStatusRequest request) {
+
+        // 1. Find the project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can update task status"
+            );
+        }
+
+        // 3. Find the task belonging to this project
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        // 4. Update only the task status
+        task.setStatus(request.getStatus());
+
+        // 5. Save the updated task
+        Task updatedTask = taskRepository.save(task);
+
+        // 6. Convert Task → TaskResponse
+        return TaskMapper.toResponse(updatedTask);
     }
 
 }

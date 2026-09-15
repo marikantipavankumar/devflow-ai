@@ -160,4 +160,98 @@ public class ProjectController {
         );
     }
 
+    @PostMapping("/{projectId}/tasks")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TaskResponse createTask(
+            @PathVariable Long projectId,
+            @Valid @RequestBody CreateTaskRequest request,
+            Authentication authentication) {
+
+        String ownerEmail = authentication.getName();
+
+        return projectService.createTask(
+                projectId,
+                ownerEmail,
+                request
+        );
+    }
+
+    @GetMapping("/{projectId}/tasks")
+    public List<TaskResponse> getProjectTasks(
+            @PathVariable Long projectId,
+            Authentication authentication) {
+
+        String userEmail = authentication.getName();
+
+        return projectService.getProjectTasks(
+                projectId,
+                userEmail
+        );
+    }
+
+    @GetMapping("/{projectId}/tasks/{taskId}")
+    public TaskResponse getTaskById(
+            @PathVariable Long projectId,
+            @PathVariable Long taskId,
+            Authentication authentication) {
+
+        String userEmail = authentication.getName();
+
+        return projectService.getTaskById(
+                projectId,
+                taskId,
+                userEmail
+        );
+    }
+
+    @PutMapping("/{projectId}/tasks/{taskId}")
+    public TaskResponse updateTask(
+            @PathVariable Long projectId,
+            @PathVariable Long taskId,
+            @Valid @RequestBody UpdateTaskRequest request,
+            Authentication authentication) {
+
+        String userEmail = authentication.getName();
+
+        return projectService.updateTask(
+                projectId,
+                taskId,
+                userEmail,
+                request
+        );
+    }
+
+    @DeleteMapping("/{projectId}/tasks/{taskId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTask(
+            @PathVariable Long projectId,
+            @PathVariable Long taskId,
+            Authentication authentication) {
+
+        String userEmail = authentication.getName();
+
+        projectService.deleteTask(
+                projectId,
+                taskId,
+                userEmail
+        );
+    }
+
+    @PatchMapping("/{projectId}/tasks/{taskId}/status")
+    public TaskResponse updateTaskStatus(
+            @PathVariable Long projectId,
+            @PathVariable Long taskId,
+            @Valid @RequestBody UpdateTaskStatusRequest request,
+            Authentication authentication) {
+
+        String userEmail = authentication.getName();
+
+        return projectService.updateTaskStatus(
+                projectId,
+                taskId,
+                userEmail,
+                request
+        );
+    }
+
 }

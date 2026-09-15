@@ -8,36 +8,17 @@ public interface ProjectService {
 
     ProjectResponse createProject(String email, CreateProjectRequest request);
 
-    List<ProjectResponse> getMyProjects(
-            String email
-    );
+    List<ProjectResponse> getMyProjects(String email);
 
-    ProjectResponse getProjectById(
-            Long id,
-            String email
-    );
+    ProjectResponse getProjectById(Long id, String email);
 
-    ProjectResponse updateProject(
-            Long id,
-            String email,
-            UpdateProjectRequest request
-    );
+    ProjectResponse updateProject(Long id, String email, UpdateProjectRequest request);
 
-    void deleteProject(
-            Long id,
-            String email
-    );
+    void deleteProject(Long id, String email);
 
-    ProjectResponse updateProjectStatus(
-            Long id,
-            String email,
-            UpdateProjectStatusRequest request);
+    ProjectResponse updateProjectStatus(Long id, String email, UpdateProjectStatusRequest request);
 
-    ProjectMemberResponse addMember(
-            Long projectId,
-            String ownerEmail,
-            AddProjectMemberRequest request
-    );
+    ProjectMemberResponse addMember(Long projectId, String ownerEmail, AddProjectMemberRequest request);
 
     List<ProjectMemberResponse> getMembers(
             Long projectId,
@@ -55,5 +36,42 @@ public interface ProjectService {
             Long userId,
             String ownerEmail,
             UpdateProjectMemberRoleRequest request
+    );
+
+    TaskResponse createTask(
+            Long projectId,
+            String ownerEmail,
+            CreateTaskRequest request
+    );
+
+    List<TaskResponse> getProjectTasks(
+            Long projectId,
+            String userEmail
+    );
+
+    TaskResponse getTaskById(
+            Long projectId,
+            Long taskId,
+            String userEmail
+    );
+
+    TaskResponse updateTask(
+            Long projectId,
+            Long taskId,
+            String userEmail,
+            UpdateTaskRequest request
+    );
+
+    void deleteTask(
+            Long projectId,
+            Long taskId,
+            String userEmail
+    );
+
+    TaskResponse updateTaskStatus(
+            Long projectId,
+            Long taskId,
+            String userEmail,
+            UpdateTaskStatusRequest request
     );
 }

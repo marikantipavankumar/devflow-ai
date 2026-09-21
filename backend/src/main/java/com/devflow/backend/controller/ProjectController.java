@@ -254,4 +254,37 @@ public class ProjectController {
         );
     }
 
+    @PatchMapping("/{projectId}/tasks/{taskId}/assignee")
+    public TaskResponse assignTask(
+            @PathVariable Long projectId,
+            @PathVariable Long taskId,
+            @Valid @RequestBody AssignTaskRequest request,
+            Authentication authentication) {
+
+        String ownerEmail = authentication.getName();
+
+        return projectService.assignTask(
+                projectId,
+                taskId,
+                ownerEmail,
+                request
+        );
+    }
+
+    @DeleteMapping("/{projectId}/tasks/{taskId}/assignee")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unassignTask(
+            @PathVariable Long projectId,
+            @PathVariable Long taskId,
+            Authentication authentication) {
+
+        String ownerEmail = authentication.getName();
+
+        projectService.unassignTask(
+                projectId,
+                taskId,
+                ownerEmail
+        );
+    }
+
 }

@@ -74,4 +74,17 @@ public interface ProjectService {
             String userEmail,
             UpdateTaskStatusRequest request
     );
+
+    TaskResponse assignTask(
+            Long projectId,
+            Long taskId,
+            String ownerEmail,
+            AssignTaskRequest request
+    );
+
+    void unassignTask(
+            Long projectId,
+            Long taskId,
+            String ownerEmail
+    );
 }

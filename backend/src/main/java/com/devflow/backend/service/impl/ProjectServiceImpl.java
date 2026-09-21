@@ -633,4 +633,105 @@ public class ProjectServiceImpl implements ProjectService {
         return TaskMapper.toResponse(updatedTask);
     }
 
+    @Override
+    public TaskResponse assignTask(
+            Long projectId,
+            Long taskId,
+            String ownerEmail,
+            AssignTaskRequest request) {
+
+        // 1. Find the project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(ownerEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can assign tasks"
+            );
+        }
+
+        // 3. Find the task inside this project
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        // 4. Find the user
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with ID: "
+                                        + request.getUserId()
+                        )
+                );
+
+        // 5. Check whether the user is a member of this project
+        boolean isMember = projectMemberRepository
+                .existsByProjectAndUser(project, user);
+
+        if (!isMember) {
+            throw new AccessDeniedException(
+                    "User is not a member of this project"
+            );
+        }
+
+        // 6. Assign the task
+        task.setAssignedTo(user);
+
+        // 7. Save the updated task
+        Task updatedTask = taskRepository.save(task);
+
+        // 8. Convert Task → TaskResponse
+        return TaskMapper.toResponse(updatedTask);
+    }
+
+    @Override
+    public void unassignTask(
+            Long projectId,
+            Long taskId,
+            String ownerEmail) {
+
+        // 1. Find the project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        // 2. Check whether requester is the project owner
+        if (!project.getOwner().getEmail().equals(ownerEmail)) {
+            throw new AccessDeniedException(
+                    "Only the project owner can unassign tasks"
+            );
+        }
+
+        // 3. Find the task belonging to this project
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        // 4. Remove the assignee
+        task.setAssignedTo(null);
+
+        // 5. Save the updated task
+        taskRepository.save(task);
+    }
+
 }

@@ -6,6 +6,7 @@ import com.devflow.backend.exception.AccessDeniedException;
 import com.devflow.backend.exception.BusinessRuleException;
 import com.devflow.backend.exception.ResourceAlreadyExistsException;
 import com.devflow.backend.exception.ResourceNotFoundException;
+import com.devflow.backend.mapper.CommentMapper;
 import com.devflow.backend.mapper.ProjectMapper;
 import com.devflow.backend.mapper.TaskMapper;
 import com.devflow.backend.repository.ProjectMemberRepository;
@@ -14,7 +15,7 @@ import com.devflow.backend.repository.TaskRepository;
 import com.devflow.backend.repository.UserRepository;
 import com.devflow.backend.service.ProjectService;
 import org.springframework.stereotype.Service;
-
+import com.devflow.backend.repository.CommentRepository;
 import java.util.List;
 
 @Service
@@ -25,18 +26,20 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMapper projectMapper;
     private final ProjectMemberRepository projectMemberRepository;
     private final TaskRepository taskRepository;
+    private final CommentRepository commentRepository;
 
     public ProjectServiceImpl(
             ProjectRepository projectRepository,
             UserRepository userRepository,
             ProjectMapper projectMapper, ProjectMemberRepository projectMemberRepository
-            ,TaskRepository taskRepository) {
+            , TaskRepository taskRepository, CommentRepository commentRepository) {
 
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.projectMapper = projectMapper;
         this.projectMemberRepository = projectMemberRepository;
         this.taskRepository=taskRepository;
+        this.commentRepository = commentRepository;
     }
     @Override
     public ProjectResponse createProject(
@@ -734,4 +737,229 @@ public class ProjectServiceImpl implements ProjectService {
         taskRepository.save(task);
     }
 
+    @Override
+    public CommentResponse createComment(
+            Long projectId,
+            Long taskId,
+            String userEmail,
+            CreateCommentRequest request) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + userEmail
+                        )
+                );
+
+        boolean hasAccess =
+                project.getOwner().getEmail().equals(userEmail)
+                        || projectMemberRepository
+                        .existsByProjectAndUser(project, user);
+
+        if (!hasAccess) {
+            throw new AccessDeniedException(
+                    "You are not a member of this project"
+            );
+        }
+
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        Comment comment = Comment.builder()
+                .content(request.getContent())
+                .task(task)
+                .user(user)
+                .build();
+
+        Comment savedComment = commentRepository.save(comment);
+
+        return CommentMapper.toResponse(savedComment);
+    }
+
+    @Override
+    public List<CommentResponse> getTaskComments(
+            Long projectId,
+            Long taskId,
+            String userEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + userEmail
+                        )
+                );
+
+        boolean hasAccess =
+                project.getOwner().getEmail().equals(userEmail)
+                        || projectMemberRepository
+                        .existsByProjectAndUser(project, user);
+
+        if (!hasAccess) {
+            throw new AccessDeniedException(
+                    "You are not a member of this project"
+            );
+        }
+
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        List<Comment> comments =
+                commentRepository.findByTask(task);
+
+        return comments.stream()
+                .map(CommentMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public CommentResponse updateComment(
+            Long projectId,
+            Long taskId,
+            Long commentId,
+            String userEmail,
+            UpdateCommentRequest request) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + userEmail
+                        )
+                );
+
+        boolean hasAccess =
+                project.getOwner().getEmail().equals(userEmail)
+                        || projectMemberRepository
+                        .existsByProjectAndUser(project, user);
+
+        if (!hasAccess) {
+            throw new AccessDeniedException(
+                    "You are not a member of this project"
+            );
+        }
+
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        Comment comment = commentRepository
+                .findByIdAndTask(commentId, task)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Comment not found with ID: " + commentId
+                        )
+                );
+
+        if (!comment.getUser().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException(
+                    "You can only update your own comments"
+            );
+        }
+
+        comment.setContent(request.getContent());
+
+        Comment updatedComment =
+                commentRepository.save(comment);
+
+        return CommentMapper.toResponse(updatedComment);
+    }
+
+    @Override
+    public void deleteComment(
+            Long projectId,
+            Long taskId,
+            Long commentId,
+            String userEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Project not found with ID: " + projectId
+                        )
+                );
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + userEmail
+                        )
+                );
+
+        boolean hasAccess =
+                project.getOwner().getEmail().equals(userEmail)
+                        || projectMemberRepository
+                        .existsByProjectAndUser(project, user);
+
+        if (!hasAccess) {
+            throw new AccessDeniedException(
+                    "You are not a member of this project"
+            );
+        }
+
+        Task task = taskRepository.findByIdAndProject(
+                        taskId,
+                        project
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Task not found with ID: " + taskId
+                        )
+                );
+
+        Comment comment = commentRepository
+                .findByIdAndTask(commentId, task)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Comment not found with ID: " + commentId
+                        )
+                );
+
+        if (!comment.getUser().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException(
+                    "You can only delete your own comments"
+            );
+        }
+
+        commentRepository.delete(comment);
+    }
 }

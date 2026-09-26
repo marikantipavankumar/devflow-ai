@@ -87,4 +87,32 @@ public interface ProjectService {
             Long taskId,
             String ownerEmail
     );
+
+    CommentResponse createComment(
+            Long projectId,
+            Long taskId,
+            String userEmail,
+            CreateCommentRequest request
+    );
+
+    List<CommentResponse> getTaskComments(
+            Long projectId,
+            Long taskId,
+            String userEmail
+    );
+
+    CommentResponse updateComment(
+            Long projectId,
+            Long taskId,
+            Long commentId,
+            String userEmail,
+            UpdateCommentRequest request
+    );
+
+    void deleteComment(
+            Long projectId,
+            Long taskId,
+            Long commentId,
+            String userEmail
+    );
 }

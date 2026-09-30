@@ -9,13 +9,10 @@ import com.devflow.backend.exception.ResourceNotFoundException;
 import com.devflow.backend.mapper.CommentMapper;
 import com.devflow.backend.mapper.ProjectMapper;
 import com.devflow.backend.mapper.TaskMapper;
-import com.devflow.backend.repository.ProjectMemberRepository;
-import com.devflow.backend.repository.ProjectRepository;
-import com.devflow.backend.repository.TaskRepository;
-import com.devflow.backend.repository.UserRepository;
+import com.devflow.backend.repository.*;
 import com.devflow.backend.service.ProjectService;
 import org.springframework.stereotype.Service;
-import com.devflow.backend.repository.CommentRepository;
+
 import java.util.List;
 
 @Service
@@ -27,12 +24,13 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final TaskRepository taskRepository;
     private final CommentRepository commentRepository;
+    private final NotificationRepository notificationRepository;
 
     public ProjectServiceImpl(
             ProjectRepository projectRepository,
             UserRepository userRepository,
             ProjectMapper projectMapper, ProjectMemberRepository projectMemberRepository
-            , TaskRepository taskRepository, CommentRepository commentRepository) {
+            , TaskRepository taskRepository, CommentRepository commentRepository, NotificationRepository notificationRepository) {
 
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
@@ -40,6 +38,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.projectMemberRepository = projectMemberRepository;
         this.taskRepository=taskRepository;
         this.commentRepository = commentRepository;
+        this.notificationRepository = notificationRepository;
     }
     @Override
     public ProjectResponse createProject(
@@ -694,6 +693,15 @@ public class ProjectServiceImpl implements ProjectService {
         // 7. Save the updated task
         Task updatedTask = taskRepository.save(task);
 
+        Notification notification = Notification.builder()
+                .message(
+                        "You have been assigned task: "
+                                + task.getTitle()
+                )
+                .user(user)
+                .build();
+
+        notificationRepository.save(notification);
         // 8. Convert Task → TaskResponse
         return TaskMapper.toResponse(updatedTask);
     }

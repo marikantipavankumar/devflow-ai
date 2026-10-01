@@ -1,0 +1,23 @@
+package com.devflow.backend.entity;
+
+public enum ActivityAction {
+
+    PROJECT_CREATED,
+    PROJECT_UPDATED,
+    PROJECT_DELETED,
+
+    MEMBER_ADDED,
+    MEMBER_REMOVED,
+    MEMBER_ROLE_UPDATED,
+
+    TASK_CREATED,
+    TASK_UPDATED,
+    TASK_ASSIGNED,
+    TASK_UNASSIGNED,
+    TASK_STATUS_UPDATED,
+    TASK_DELETED,
+
+    COMMENT_CREATED,
+    COMMENT_UPDATED,
+    COMMENT_DELETED
+}

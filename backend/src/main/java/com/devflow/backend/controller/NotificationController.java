@@ -21,7 +21,7 @@ public class NotificationController {
             Authentication authentication) {
 
         String userEmail = authentication.getName();
-
+    
         return notificationService.getMyNotifications(
                 userEmail
         );
